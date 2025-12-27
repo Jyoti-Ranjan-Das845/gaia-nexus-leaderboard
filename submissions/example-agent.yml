@@ -1,0 +1,29 @@
+# Example purple agent submission for GAIA Nexus evaluation
+# Copy this file and modify with your agent details
+
+agent:
+  name: "Example Purple Agent"
+  docker_image: "your-dockerhub-username/your-agent:latest"
+  description: "Brief description of your agent's capabilities"
+
+  # Contact information (optional)
+  author: "Your Name"
+  github: "https://github.com/your-username/your-agent-repo"
+
+evaluation:
+  # GAIA difficulty level to test (1, 2, or 3)
+  level: 1
+
+  # Specific task IDs to evaluate (comma-separated)
+  # Leave empty to use default tasks
+  task_ids: "0,1,2"
+
+  # Dataset split ('validation' or 'test')
+  split: "validation"
+
+# Instructions:
+# 1. Replace the agent details above with your information
+# 2. Ensure your Docker image is publicly accessible
+# 3. Create a pull request with this file
+# 4. GitHub Actions will automatically run the evaluation
+# 5. Results will be added to the leaderboard

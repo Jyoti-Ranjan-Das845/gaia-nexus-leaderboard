@@ -1,0 +1,109 @@
+name: Evaluate Agent on GAIA Benchmark
+
+on:
+  pull_request:
+    paths:
+      - 'submissions/**'
+  workflow_dispatch:
+    inputs:
+      agent_image:
+        description: 'Docker image of purple agent to evaluate'
+        required: true
+        default: 'jyotirdas845/gaia-purple-agent:latest'
+      level:
+        description: 'GAIA difficulty level (1, 2, or 3)'
+        required: false
+        default: '1'
+      task_ids:
+        description: 'Comma-separated task IDs to evaluate (e.g., "0,1,2")'
+        required: false
+        default: '0,1,2'
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Pull green agent image
+        run: docker pull jyotirdas845/gaia-green-agent:latest
+
+      - name: Pull purple agent image
+        run: |
+          AGENT_IMAGE="${{ github.event.inputs.agent_image || 'jyotirdas845/gaia-purple-agent:latest' }}"
+          docker pull $AGENT_IMAGE
+
+      - name: Run GAIA evaluation
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          AGENT_IMAGE="${{ github.event.inputs.agent_image || 'jyotirdas845/gaia-purple-agent:latest' }}"
+          LEVEL="${{ github.event.inputs.level || '1' }}"
+          TASK_IDS="${{ github.event.inputs.task_ids || '0,1,2' }}"
+
+          # Start green agent
+          docker run -d --name gaia-green \
+            -e HF_TOKEN=$HF_TOKEN \
+            -p 9001:9001 \
+            jyotirdas845/gaia-green-agent:latest
+
+          # Wait for green agent to be ready
+          sleep 10
+
+          # Start purple agent
+          docker run -d --name gaia-purple \
+            -e OPENAI_API_KEY=$OPENAI_API_KEY \
+            -p 9002:9002 \
+            $AGENT_IMAGE
+
+          # Wait for purple agent to be ready
+          sleep 10
+
+          # TODO: Trigger evaluation and collect results
+          # For now, create placeholder result
+          mkdir -p results
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          AGENT_NAME=$(echo $AGENT_IMAGE | tr '/:' '_')
+
+          cat > results/${AGENT_NAME}_${TIMESTAMP}.json <<EOF
+          {
+            "agent_id": "$AGENT_IMAGE",
+            "agent_name": "$AGENT_NAME",
+            "timestamp": "$TIMESTAMP",
+            "level": $LEVEL,
+            "task_ids": "$TASK_IDS",
+            "accuracy": 0.0,
+            "score": 0,
+            "total": 3,
+            "avg_time": 0.0,
+            "status": "pending",
+            "note": "Evaluation framework in progress"
+          }
+          EOF
+
+      - name: Stop containers
+        if: always()
+        run: |
+          docker stop gaia-green gaia-purple || true
+          docker rm gaia-green gaia-purple || true
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-results
+          path: results/*.json
+
+      - name: Commit results
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add results/
+          git commit -m "Add evaluation results for ${{ github.event.inputs.agent_image }}" || true
+          git push || true
