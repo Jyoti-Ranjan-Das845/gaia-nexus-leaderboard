@@ -89,6 +89,10 @@ jobs:
           # Copy scenario file into green agent container
           docker cp /tmp/scenario.toml gaia-green:/tmp/scenario.toml
 
+          # Install client dependencies
+          echo "Installing client dependencies..."
+          docker exec gaia-green pip install httpx tomli --quiet
+
           # Run evaluation using client_cli
           echo "Starting evaluation..."
           docker exec gaia-green python -m agentbeats.client_cli /tmp/scenario.toml /tmp/raw_results.json || echo "Evaluation failed"
