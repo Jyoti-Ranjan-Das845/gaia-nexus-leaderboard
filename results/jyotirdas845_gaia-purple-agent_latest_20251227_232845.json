@@ -1,0 +1,13 @@
+{
+  "agent_id": "jyotirdas845/gaia-purple-agent:latest",
+  "agent_name": "jyotirdas845_gaia-purple-agent_latest",
+  "timestamp": "20251227_232845",
+  "level": 1,
+  "task_ids": "0,1,2",
+  "accuracy": 0.0,
+  "score": 0,
+  "total": 3,
+  "avg_time": 0.0,
+  "status": "pending",
+  "note": "Evaluation framework in progress"
+}
