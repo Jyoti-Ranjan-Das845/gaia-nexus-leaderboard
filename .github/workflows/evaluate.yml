@@ -1,5 +1,8 @@
 name: Evaluate Agent on GAIA Benchmark
 
+permissions:
+  contents: write
+
 on:
   pull_request:
     paths:
@@ -65,27 +68,45 @@ jobs:
           # Wait for purple agent to be ready
           sleep 10
 
-          # TODO: Trigger evaluation and collect results
-          # For now, create placeholder result
+          # Create scenario TOML for evaluation
+          cat > /tmp/scenario.toml <<EOF
+          [green_agent]
+          endpoint = "http://localhost:9001"
+
+          [[participants]]
+          role = "executor"
+          endpoint = "http://localhost:9002"
+
+          [config]
+          level = $LEVEL
+          split = "validation"
+          task_indices = [$(echo $TASK_IDS | sed 's/,/, /g')]
+          EOF
+
+          echo "Scenario configuration:"
+          cat /tmp/scenario.toml
+
+          # Copy scenario file into green agent container
+          docker cp /tmp/scenario.toml gaia-green:/tmp/scenario.toml
+
+          # Run evaluation using client_cli
+          echo "Starting evaluation..."
+          docker exec gaia-green python -m agentbeats.client_cli /tmp/scenario.toml /tmp/raw_results.json || echo "Evaluation failed"
+
+          # Copy results out of container
+          docker cp gaia-green:/tmp/raw_results.json /tmp/raw_results.json 2>/dev/null || echo '{"results":[]}' > /tmp/raw_results.json
+
+          # Parse and format results for leaderboard
           mkdir -p results
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           AGENT_NAME=$(echo $AGENT_IMAGE | tr '/:' '_')
 
-          cat > results/${AGENT_NAME}_${TIMESTAMP}.json <<EOF
-          {
-            "agent_id": "$AGENT_IMAGE",
-            "agent_name": "$AGENT_NAME",
-            "timestamp": "$TIMESTAMP",
-            "level": $LEVEL,
-            "task_ids": "$TASK_IDS",
-            "accuracy": 0.0,
-            "score": 0,
-            "total": 3,
-            "avg_time": 0.0,
-            "status": "pending",
-            "note": "Evaluation framework in progress"
-          }
-          EOF
+          python3 scripts/parse_results.py \
+            /tmp/raw_results.json \
+            results/${AGENT_NAME}_${TIMESTAMP}.json \
+            "$AGENT_IMAGE" \
+            "$LEVEL" \
+            "$TASK_IDS"
 
       - name: Stop containers
         if: always()
