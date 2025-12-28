@@ -79,6 +79,12 @@ jobs:
             sleep 1
           done
 
+          # Debug: Show purple agent logs if it didn't start
+          echo "Purple agent container status:"
+          docker ps -a | grep purple || true
+          echo "Purple agent logs:"
+          docker logs gaia-purple || true
+
           echo "Both agents are ready!"
 
           # Create scenario TOML for evaluation
