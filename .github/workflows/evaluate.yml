@@ -49,8 +49,8 @@ jobs:
 
           # Start green agent
           docker run -d --name gaia-green \
+            --network host \
             -e HF_TOKEN=$HF_TOKEN \
-            -p 9001:9001 \
             jyotirdas845/gaia-green-agent:latest
 
           # Wait for green agent to be ready
@@ -65,8 +65,8 @@ jobs:
 
           # Start purple agent
           docker run -d --name gaia-purple \
+            --network host \
             -e OPENAI_API_KEY=$OPENAI_API_KEY \
-            -p 9002:9002 \
             $AGENT_IMAGE
 
           # Wait for purple agent to be ready
