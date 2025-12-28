@@ -30,9 +30,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Pull green agent image
         run: docker pull jyotirdas845/gaia-green-agent:latest
 
@@ -89,13 +86,9 @@ jobs:
           # Copy scenario file into green agent container
           docker cp /tmp/scenario.toml gaia-green:/tmp/scenario.toml
 
-          # Install client dependencies
-          echo "Installing client dependencies..."
-          docker exec gaia-green pip install httpx tomli --quiet
-
-          # Run evaluation using client_cli
+          # Run evaluation using client_cli (use uv run to access virtual environment)
           echo "Starting evaluation..."
-          docker exec gaia-green python -m agentbeats.client_cli /tmp/scenario.toml /tmp/raw_results.json || echo "Evaluation failed"
+          docker exec gaia-green uv run python -m agentbeats.client_cli /tmp/scenario.toml /tmp/raw_results.json || echo "Evaluation failed"
 
           # Copy results out of container
           docker cp gaia-green:/tmp/raw_results.json /tmp/raw_results.json 2>/dev/null || echo '{"results":[]}' > /tmp/raw_results.json
