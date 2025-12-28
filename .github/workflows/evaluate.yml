@@ -86,7 +86,7 @@ jobs:
           # Copy scenario file into green agent container
           docker cp /tmp/scenario.toml gaia-green:/tmp/scenario.toml
 
-          # Run evaluation using client_cli (use uv run to access virtual environment)
+          # Run evaluation using client_cli (use uv run to access dependencies in venv)
           echo "Starting evaluation..."
           docker exec gaia-green uv run python -m agentbeats.client_cli /tmp/scenario.toml /tmp/raw_results.json || echo "Evaluation failed"
 
