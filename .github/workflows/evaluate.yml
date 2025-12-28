@@ -54,7 +54,14 @@ jobs:
             jyotirdas845/gaia-green-agent:latest
 
           # Wait for green agent to be ready
-          sleep 10
+          echo "Waiting for green agent to be ready..."
+          for i in {1..30}; do
+            if curl -s http://localhost:9001/.well-known/agent-card.json > /dev/null 2>&1; then
+              echo "Green agent is ready!"
+              break
+            fi
+            sleep 1
+          done
 
           # Start purple agent
           docker run -d --name gaia-purple \
@@ -63,7 +70,16 @@ jobs:
             $AGENT_IMAGE
 
           # Wait for purple agent to be ready
-          sleep 10
+          echo "Waiting for purple agent to be ready..."
+          for i in {1..30}; do
+            if curl -s http://localhost:9002/.well-known/agent-card.json > /dev/null 2>&1; then
+              echo "Purple agent is ready!"
+              break
+            fi
+            sleep 1
+          done
+
+          echo "Both agents are ready!"
 
           # Create scenario TOML for evaluation
           cat > /tmp/scenario.toml <<EOF
