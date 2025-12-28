@@ -127,6 +127,20 @@ jobs:
             "$LEVEL" \
             "$TASK_IDS"
 
+          # Combine all results into single JSON array for DuckDB
+          python3 -c "
+          import json, glob
+          results = []
+          for file in sorted(glob.glob('results/*.json')):
+              if file.endswith('.gitkeep') or file.endswith('all_results.json'):
+                  continue
+              with open(file, 'r') as f:
+                  results.append(json.load(f))
+          with open('results/all_results.json', 'w') as f:
+              json.dump(results, f, indent=2)
+          print(f'Combined {len(results)} results into all_results.json')
+          "
+
       - name: Stop containers
         if: always()
         run: |
